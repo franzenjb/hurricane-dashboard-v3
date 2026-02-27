@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hurricane Intelligence Platform — American Red Cross</title>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Source+Sans+Pro:wght@300;400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    :root {
+      --arc-red: #ED1B2E;
+      --arc-black: #1a1a1a;
+      --arc-white: #ffffff;
+      --arc-gray-900: #2d2d2d;
+      --arc-gray-700: #4a4a4a;
+      --arc-gray-500: #737373;
+      --arc-gray-300: #a3a3a3;
+      --arc-gray-100: #e5e5e5;
+      --arc-cream: #f7f5f2;
+      --arc-info: #1e4a6d;
+      --arc-success: #2d5a27;
+      --arc-caution: #b8860b;
+      --font-headline: 'Libre Baskerville', Georgia, serif;
+      --font-body: 'Source Sans Pro', 'Helvetica Neue', sans-serif;
+      --font-data: 'IBM Plex Mono', Consolas, monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--arc-cream);
+      color: var(--arc-gray-900);
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* --- Header --- */
+    header {
+      background: var(--arc-white);
+      border-bottom: 3px solid var(--arc-black);
+      padding: 32px 0 24px;
+    }
+
+    /* --- KPI Row --- */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+    }
+
+    .kpi-card {
+      background: var(--arc-white);
+      border: 1px solid var(--arc-gray-100);
+      border-radius: 4px;
+      padding: 24px;
+    }
+
+    .kpi-value {
+      font-family: var(--font-data);
+      font-size: 32px;
+      font-weight: 500;
+      color: var(--arc-black);
+    }
+
+    .kpi-card:first-child .kpi-value {
+      color: var(--arc-red);
+    }
+
+    .kpi-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      color: var(--arc-gray-500);
+      letter-spacing: 1px;
+      margin-top: 4px;
+    }
+
+    /* --- Filter Bar --- */
+    .filter-bar {
+      background: var(--arc-white);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid var(--arc-gray-100);
+      padding: 12px 24px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .filter-pill {
+      border-radius: 20px;
+      border: 1px solid var(--arc-gray-300);
+      padding: 6px 16px;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: var(--font-body);
+      background: var(--arc-white);
+      color: var(--arc-gray-700);
+      transition: all 0.15s ease;
+    }
+
+    .filter-pill:hover {
+      border-color: var(--arc-gray-700);
+    }
+
+    .filter-pill.active {
+      background: var(--arc-black);
+      color: white;
+      border-color: var(--arc-black);
+    }
+
+    .filter-search {
+      width: 180px;
+      padding: 6px 16px;
+      border: 1px solid var(--arc-gray-300);
+      border-radius: 20px;
+      font-size: 13px;
+      font-family: var(--font-body);
+      outline: none;
+    }
+
+    .filter-search:focus {
+      border-color: var(--arc-gray-700);
+    }
+
+    .filter-separator {
+      width: 1px;
+      height: 24px;
+      background: var(--arc-gray-300);
+      margin: 0 4px;
+    }
+
+    .year-input {
+      width: 70px;
+      border: 1px solid var(--arc-gray-300);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-family: var(--font-data);
+      font-size: 13px;
+      text-align: center;
+      outline: none;
+    }
+
+    .year-input:focus {
+      border-color: var(--arc-gray-700);
+    }
+
+    /* --- Explorer Panel --- */
+    .explorer-panel {
+      display: flex;
+      background: white;
+      border: 1px solid var(--arc-gray-100);
+      border-radius: 4px;
+      min-height: 600px;
+      overflow: hidden;
+    }
+
+    .explorer-timeline {
+      flex: 0 0 65%;
+      min-height: 600px;
+    }
+
+    .explorer-sidebar {
+      flex: 0 0 35%;
+      border-left: 1px solid var(--arc-gray-100);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    /* --- Storm Header --- */
+    .storm-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--arc-gray-100);
+    }
+
+    .storm-badge {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-family: var(--font-data);
+      font-size: 16px;
+      background: #8B9DC3;
+      flex-shrink: 0;
+    }
+
+    .storm-name {
+      font-family: var(--font-headline);
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .storm-subtitle {
+      font-size: 13px;
+      color: var(--arc-gray-500);
+    }
+
+    /* --- Storm Stats --- */
+    .storm-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      border-bottom: 1px solid var(--arc-gray-100);
+    }
+
+    .storm-stat {
+      padding: 8px 12px;
+      text-align: center;
+      border-right: 1px solid var(--arc-gray-100);
+    }
+
+    .storm-stat:last-child {
+      border-right: none;
+    }
+
+    .storm-stat-label {
+      display: block;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--arc-gray-500);
+      font-weight: 600;
+    }
+
+    .storm-stat-value {
+      display: block;
+      font-family: var(--font-data);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--arc-black);
+    }
+
+    /* --- Map --- */
+    .storm-map-container {
+      position: relative;
+      height: 300px;
+      flex-shrink: 0;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    .map-legend {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.9);
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 1000;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    /* --- Narrative --- */
+    .storm-narrative {
+      padding: 20px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .narrative-title {
+      font-family: var(--font-headline);
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--arc-gray-100);
+    }
+
+    .narrative-text {
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--arc-gray-700);
+    }
+
+    /* --- Footer --- */
+    footer {
+      background: var(--arc-white);
+      border-top: 3px solid var(--arc-black);
+      padding: 32px 0;
+    }
+
+    /* --- Sidebar scrollbar --- */
+    .explorer-sidebar::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .explorer-sidebar::-webkit-scrollbar-track {
+      background: var(--arc-cream);
+    }
+
+    .explorer-sidebar::-webkit-scrollbar-thumb {
+      background: var(--arc-gray-300);
+      border-radius: 3px;
+    }
+
+    /* --- Responsive --- */
+    @media (max-width: 768px) {
+      .kpi-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .explorer-panel {
+        flex-direction: column;
+      }
+
+      .explorer-timeline {
+        flex: 0 0 auto;
+        min-height: 400px;
+      }
+
+      .explorer-sidebar {
+        flex: 0 0 auto;
+        border-left: none;
+        border-top: 1px solid var(--arc-gray-100);
+      }
+
+      header h1 {
+        font-size: 28px !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="container">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:8px;">
+        <svg viewBox="0 0 32 32" width="32" height="32"><rect x="12" y="4" width="8" height="24" fill="#ED1B2E"/><rect x="4" y="12" width="24" height="8" fill="#ED1B2E"/></svg>
+        <span style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:#ED1B2E;">American Red Cross</span>
+      </div>
+      <h1 style="font-family:var(--font-headline);font-size:36px;font-weight:700;">Hurricane Intelligence Platform</h1>
+      <p style="font-size:16px;color:var(--arc-gray-700);margin-top:4px;">Atlantic storms (1851–2025) — HURDAT2 Best Track Data</p>
+    </div>
+  </header>
+
+  <!-- KPI Section -->
+  <section class="container" style="padding-top:32px;padding-bottom:32px;">
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-value" id="kpi-total">–</div>
+        <div class="kpi-label">Total Storms</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" id="kpi-cat5">–</div>
+        <div class="kpi-label">Category 5 Hurricanes</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" id="kpi-major">–</div>
+        <div class="kpi-label">Major Hurricanes (Cat 3–5)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" id="kpi-landfall">–</div>
+        <div class="kpi-label">U.S. Landfalls</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Explorer Section -->
+  <section class="container" style="padding-bottom:48px;">
+    <div style="margin-bottom:16px;">
+      <div style="width:40px;height:3px;background:#ED1B2E;margin-bottom:12px;"></div>
+      <h2 style="font-family:var(--font-headline);font-size:24px;font-weight:700;">Timeline Explorer</h2>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <input type="text" id="search-input" placeholder="Search by name..." class="filter-search">
+      <button class="filter-pill" data-category="0">TS</button>
+      <button class="filter-pill" data-category="1">Cat 1</button>
+      <button class="filter-pill" data-category="2">Cat 2</button>
+      <button class="filter-pill active" data-category="3">Cat 3</button>
+      <button class="filter-pill active" data-category="4">Cat 4</button>
+      <button class="filter-pill active" data-category="5">Cat 5</button>
+      <div class="filter-separator"></div>
+      <button class="filter-pill" id="landfall-toggle">Landfall Only</button>
+      <button class="filter-pill active" id="names-toggle">Show Names</button>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+        <label style="font-size:12px;color:var(--arc-gray-500);">Years:</label>
+        <input type="number" id="year-start" value="2010" min="1851" max="2025" class="year-input">
+        <span style="color:var(--arc-gray-300);">–</span>
+        <input type="number" id="year-end" value="2025" min="1851" max="2025" class="year-input">
+      </div>
+    </div>
+
+    <!-- Explorer Split Panel -->
+    <div class="explorer-panel">
+      <div class="explorer-timeline">
+        <div id="timeline" style="width:100%;height:100%;"></div>
+      </div>
+      <div class="explorer-sidebar">
+        <!-- Storm Info Header -->
+        <div class="storm-header" id="storm-header">
+          <div class="storm-badge" id="storm-badge">?</div>
+          <div>
+            <div class="storm-name" id="storm-name">Select a Storm</div>
+            <div class="storm-subtitle" id="storm-subtitle">Click any dot on the timeline</div>
+          </div>
+        </div>
+        <!-- Storm Stats Row -->
+        <div class="storm-stats" id="storm-stats" style="display:none;">
+          <div class="storm-stat">
+            <span class="storm-stat-label">Date</span>
+            <span class="storm-stat-value" id="stat-date">–</span>
+          </div>
+          <div class="storm-stat">
+            <span class="storm-stat-label">Wind</span>
+            <span class="storm-stat-value" id="stat-wind">–</span>
+          </div>
+          <div class="storm-stat">
+            <span class="storm-stat-label">Pressure</span>
+            <span class="storm-stat-value" id="stat-pressure">–</span>
+          </div>
+          <div class="storm-stat">
+            <span class="storm-stat-label">Landfall</span>
+            <span class="storm-stat-value" id="stat-landfall">–</span>
+          </div>
+        </div>
+        <!-- Map -->
+        <div class="storm-map-container">
+          <div id="map"></div>
+          <div class="map-legend">
+            <span class="legend-dot" style="background:#8B9DC3;"></span><span>TS</span>
+            <span class="legend-dot" style="background:#5CB85C;"></span><span>1</span>
+            <span class="legend-dot" style="background:#F0AD4E;"></span><span>2</span>
+            <span class="legend-dot" style="background:#FF7F00;"></span><span>3</span>
+            <span class="legend-dot" style="background:#D9534F;"></span><span>4</span>
+            <span class="legend-dot" style="background:#8B008B;"></span><span>5</span>
+          </div>
+        </div>
+        <!-- Narrative -->
+        <div class="storm-narrative">
+          <div class="narrative-title">Historical Narrative</div>
+          <div class="narrative-text" id="narrative-text">Select a storm with landfall history for detailed narrative information.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <p style="font-size:13px;color:var(--arc-gray-500);">Data: NOAA/NHC HURDAT2 Best Track. Built for American Red Cross Disaster Services.</p>
+    </div>
+  </footer>
+
+  <script src="atlantic-storms-enhanced.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
