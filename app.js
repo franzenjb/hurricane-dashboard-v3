@@ -26,13 +26,22 @@
   var yearMin = 2010;
   var yearMax = 2025;
   var searchQuery = '';
+  var selectedState = '';
+  var comparedStorms = [];
+  var currentStorm = null;
 
   // --- Init ---
   function init() {
     storms = typeof ATLANTIC_STORMS_ENHANCED !== 'undefined' ? ATLANTIC_STORMS_ENHANCED : [];
     computeKPIs();
+    populateDeadliest();
+    populateStateFilter();
     setupFilters();
     initMap();
+    setupComparison();
+    setupMapFullscreen();
+    setupExportCSV();
+    setupSeasonToggle();
     applyFilters();
   }
 
@@ -44,6 +53,70 @@
     document.getElementById('kpi-landfall').textContent = storms.filter(function(s) {
       return Array.isArray(s.landfall_states) && s.landfall_states.length > 0;
     }).length.toLocaleString();
+  }
+
+  // --- Feature 1: Deadliest Storms Top-10 ---
+  function populateDeadliest() {
+    var sorted = storms.slice().sort(function(a, b) { return (b.deaths || 0) - (a.deaths || 0); });
+    var top10 = sorted.slice(0, 10);
+    var container = document.getElementById('deadliest-scroll');
+    container.innerHTML = '';
+
+    top10.forEach(function(storm) {
+      var catLabel = storm.category === 0 ? 'TS' : 'Cat ' + storm.category;
+      var statesText = (storm.landfall_states && storm.landfall_states.length > 0)
+        ? storm.landfall_states.join(', ')
+        : 'No U.S. landfall';
+      var card = document.createElement('div');
+      card.className = 'deadliest-card';
+      card.innerHTML =
+        '<div class="deadliest-card-name">' + escapeHtml(storm.name) + '</div>' +
+        '<div class="deadliest-card-meta">' +
+          '<span class="cat-dot" style="background:' + (CATEGORY_COLORS[storm.category] || '#757575') + ';"></span>' +
+          storm.year + ' &middot; ' + catLabel +
+        '</div>' +
+        '<div class="deadliest-card-deaths">' + (storm.deaths || 0).toLocaleString() + '</div>' +
+        '<div class="deadliest-card-label">deaths</div>' +
+        '<div class="deadliest-card-states">' + escapeHtml(statesText) + '</div>';
+
+      card.addEventListener('click', function() {
+        selectStorm(storm);
+        var explorerSection = document.getElementById('timeline');
+        if (explorerSection) {
+          explorerSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      });
+
+      container.appendChild(card);
+    });
+  }
+
+  // --- Feature 2: State Filter ---
+  function populateStateFilter() {
+    var stateSet = new Set();
+    storms.forEach(function(s) {
+      if (Array.isArray(s.landfall_states)) {
+        s.landfall_states.forEach(function(st) { stateSet.add(st); });
+      }
+    });
+    var stateList = Array.from(stateSet).sort();
+    var select = document.getElementById('state-filter');
+    stateList.forEach(function(st) {
+      var opt = document.createElement('option');
+      opt.value = st;
+      opt.textContent = st;
+      select.appendChild(opt);
+    });
+  }
+
+  function updateStateCountLabel() {
+    var label = document.getElementById('state-count-label');
+    if (selectedState) {
+      var count = filteredStorms.length;
+      label.textContent = count + ' storm' + (count !== 1 ? 's' : '') + ' hit ' + selectedState;
+    } else {
+      label.textContent = '';
+    }
   }
 
   // --- Filters ---
@@ -97,6 +170,12 @@
       yearMax = parseInt(this.value) || 2025;
       applyFilters();
     });
+
+    // State filter
+    document.getElementById('state-filter').addEventListener('change', function() {
+      selectedState = this.value;
+      applyFilters();
+    });
   }
 
   function applyFilters() {
@@ -105,9 +184,198 @@
       if (!activeCategories.has(s.category)) return false;
       if (landfallOnly && (!Array.isArray(s.landfall_states) || s.landfall_states.length === 0)) return false;
       if (searchQuery && !s.name.toLowerCase().includes(searchQuery)) return false;
+      if (selectedState && (!Array.isArray(s.landfall_states) || s.landfall_states.indexOf(selectedState) === -1)) return false;
       return true;
     });
+    updateStateCountLabel();
+    updateSeasonCards();
     createTimeline();
+  }
+
+  // --- Feature 4: Season Summaries ---
+  function setupSeasonToggle() {
+    var btn = document.getElementById('season-toggle-btn');
+    var content = document.getElementById('season-content');
+    btn.addEventListener('click', function() {
+      var isVisible = content.style.display !== 'none';
+      content.style.display = isVisible ? 'none' : 'block';
+      btn.classList.toggle('active', !isVisible);
+    });
+  }
+
+  function updateSeasonCards() {
+    var container = document.getElementById('season-scroll');
+    if (!container) return;
+
+    // Group filtered storms by year
+    var yearMap = {};
+    filteredStorms.forEach(function(s) {
+      if (!yearMap[s.year]) yearMap[s.year] = [];
+      yearMap[s.year].push(s);
+    });
+
+    var years = Object.keys(yearMap).sort(function(a, b) { return parseInt(b) - parseInt(a); });
+    container.innerHTML = '';
+
+    years.forEach(function(yr) {
+      var yearStorms = yearMap[yr];
+      var majorCount = yearStorms.filter(function(s) { return s.category >= 3; }).length;
+      var landfallCount = yearStorms.filter(function(s) {
+        return Array.isArray(s.landfall_states) && s.landfall_states.length > 0;
+      }).length;
+
+      var card = document.createElement('div');
+      card.className = 'season-card';
+      card.innerHTML =
+        '<div class="season-card-year">' + yr + '</div>' +
+        '<div class="season-card-stats">' +
+          '<span>' + yearStorms.length + '</span> storms<br>' +
+          '<span>' + majorCount + '</span> major<br>' +
+          '<span>' + landfallCount + '</span> landfalls' +
+        '</div>';
+
+      card.addEventListener('click', function() {
+        yearMin = parseInt(yr);
+        yearMax = parseInt(yr);
+        document.getElementById('year-start').value = yr;
+        document.getElementById('year-end').value = yr;
+        applyFilters();
+      });
+
+      container.appendChild(card);
+    });
+  }
+
+  // --- Feature 3: Storm Comparison ---
+  function setupComparison() {
+    document.getElementById('compare-btn').addEventListener('click', function() {
+      if (!currentStorm) return;
+      // Don't add duplicates
+      var isDupe = comparedStorms.some(function(s) { return s.storm_id === currentStorm.storm_id; });
+      if (isDupe) return;
+      if (comparedStorms.length >= 3) {
+        comparedStorms.shift(); // remove oldest if at max
+      }
+      comparedStorms.push(currentStorm);
+      renderComparisonTray();
+    });
+
+    document.getElementById('comparison-clear-btn').addEventListener('click', function() {
+      comparedStorms = [];
+      renderComparisonTray();
+    });
+  }
+
+  function renderComparisonTray() {
+    var tray = document.getElementById('comparison-tray');
+    var cardsContainer = document.getElementById('comparison-cards');
+
+    if (comparedStorms.length === 0) {
+      tray.classList.remove('visible');
+      return;
+    }
+
+    tray.classList.add('visible');
+    cardsContainer.innerHTML = '';
+
+    // Find max wind and max deaths for bolding
+    var maxWind = 0;
+    var maxDeaths = 0;
+    comparedStorms.forEach(function(s) {
+      if ((s.wind_mph || 0) > maxWind) maxWind = s.wind_mph || 0;
+      if ((s.deaths || 0) > maxDeaths) maxDeaths = s.deaths || 0;
+    });
+
+    comparedStorms.forEach(function(storm) {
+      var windIsBest = comparedStorms.length >= 2 && (storm.wind_mph || 0) === maxWind;
+      var deathsIsBest = comparedStorms.length >= 2 && (storm.deaths || 0) === maxDeaths;
+      var card = document.createElement('div');
+      card.className = 'comparison-mini-card';
+      card.innerHTML =
+        '<div class="mini-name">' +
+          '<span class="cat-dot" style="background:' + (CATEGORY_COLORS[storm.category] || '#757575') + ';"></span>' +
+          escapeHtml(storm.name) +
+        '</div>' +
+        '<div class="mini-stat' + (windIsBest ? ' best' : '') + '">' + (storm.wind_mph || 0) + ' mph</div>' +
+        '<div class="mini-stat' + (deathsIsBest ? ' best' : '') + '">' + (storm.deaths || 0).toLocaleString() + ' deaths</div>';
+      cardsContainer.appendChild(card);
+    });
+  }
+
+  // --- Feature 5: Export CSV ---
+  function setupExportCSV() {
+    document.getElementById('export-csv-btn').addEventListener('click', function() {
+      if (filteredStorms.length === 0) return;
+      var header = 'storm_id,name,year,month,day,category,wind_mph,pressure,landfall_states,deaths';
+      var rows = filteredStorms.map(function(s) {
+        var states = Array.isArray(s.landfall_states) ? s.landfall_states.join(';') : '';
+        return [
+          csvEscape(s.storm_id || ''),
+          csvEscape(s.name || ''),
+          s.year,
+          s.month,
+          s.day,
+          s.category,
+          s.wind_mph || '',
+          s.pressure || '',
+          csvEscape(states),
+          s.deaths || 0
+        ].join(',');
+      });
+      var csv = header + '\n' + rows.join('\n');
+      var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement('a');
+      link.href = url;
+      link.download = 'hurricane-data-export.csv';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  function csvEscape(val) {
+    val = String(val);
+    if (val.indexOf(',') !== -1 || val.indexOf('"') !== -1 || val.indexOf('\n') !== -1) {
+      return '"' + val.replace(/"/g, '""') + '"';
+    }
+    return val;
+  }
+
+  // --- Feature 6: Fullscreen Map ---
+  function setupMapFullscreen() {
+    var container = document.getElementById('map-container');
+    var expandBtn = document.getElementById('map-fullscreen-btn');
+    var closeBtn = document.getElementById('map-fullscreen-close');
+
+    function toggleFullscreen(enter) {
+      if (enter) {
+        container.classList.add('map-fullscreen');
+        closeBtn.classList.add('visible');
+      } else {
+        container.classList.remove('map-fullscreen');
+        closeBtn.classList.remove('visible');
+      }
+      // Let Leaflet recalculate size
+      setTimeout(function() {
+        if (map) map.invalidateSize();
+      }, 100);
+    }
+
+    expandBtn.addEventListener('click', function() {
+      toggleFullscreen(true);
+    });
+
+    closeBtn.addEventListener('click', function() {
+      toggleFullscreen(false);
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && container.classList.contains('map-fullscreen')) {
+        toggleFullscreen(false);
+      }
+    });
   }
 
   // --- Timeline (Plotly scatter) ---
@@ -188,6 +456,11 @@
 
   // --- Storm Selection ---
   function selectStorm(storm) {
+    currentStorm = storm;
+
+    // Show compare button
+    document.getElementById('compare-btn').style.display = 'inline-block';
+
     // Update badge
     var badge = document.getElementById('storm-badge');
     badge.textContent = storm.category === 0 ? 'TS' : storm.category;
@@ -344,6 +617,13 @@
       }
     }
     drawNext();
+  }
+
+  // --- Utility ---
+  function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
   }
 
   // --- Boot ---

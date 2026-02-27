@@ -325,6 +325,356 @@
       border-radius: 3px;
     }
 
+    /* --- Deadliest Storms --- */
+    .deadliest-section {
+      padding-bottom: 24px;
+    }
+
+    .deadliest-scroll {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      padding-bottom: 12px;
+      scroll-snap-type: x mandatory;
+    }
+
+    .deadliest-scroll::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .deadliest-scroll::-webkit-scrollbar-track {
+      background: var(--arc-cream);
+    }
+
+    .deadliest-scroll::-webkit-scrollbar-thumb {
+      background: var(--arc-gray-300);
+      border-radius: 3px;
+    }
+
+    .deadliest-card {
+      background: var(--arc-white);
+      border: 1px solid var(--arc-gray-100);
+      border-radius: 4px;
+      padding: 16px;
+      min-width: 200px;
+      flex-shrink: 0;
+      cursor: pointer;
+      scroll-snap-align: start;
+      transition: border-color 0.15s ease;
+    }
+
+    .deadliest-card:hover {
+      border-color: var(--arc-gray-300);
+    }
+
+    .deadliest-card-name {
+      font-family: var(--font-headline);
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .deadliest-card-meta {
+      font-size: 13px;
+      color: var(--arc-gray-500);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .deadliest-card-meta .cat-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    .deadliest-card-deaths {
+      font-family: var(--font-data);
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--arc-red);
+    }
+
+    .deadliest-card-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--arc-gray-500);
+      letter-spacing: 1px;
+    }
+
+    .deadliest-card-states {
+      font-size: 12px;
+      color: var(--arc-gray-500);
+      margin-top: 4px;
+    }
+
+    /* --- Season Summaries --- */
+    .season-section {
+      padding-bottom: 24px;
+    }
+
+    .season-toggle {
+      margin-bottom: 12px;
+    }
+
+    .season-scroll {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 12px;
+      scroll-snap-type: x mandatory;
+    }
+
+    .season-scroll::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .season-scroll::-webkit-scrollbar-track {
+      background: var(--arc-cream);
+    }
+
+    .season-scroll::-webkit-scrollbar-thumb {
+      background: var(--arc-gray-300);
+      border-radius: 3px;
+    }
+
+    .season-card {
+      background: var(--arc-white);
+      border: 1px solid var(--arc-gray-100);
+      border-radius: 4px;
+      padding: 12px 16px;
+      min-width: 140px;
+      flex-shrink: 0;
+      cursor: pointer;
+      scroll-snap-align: start;
+      transition: border-color 0.15s ease;
+    }
+
+    .season-card:hover {
+      border-color: var(--arc-gray-300);
+    }
+
+    .season-card-year {
+      font-family: var(--font-data);
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .season-card-stats {
+      font-size: 12px;
+      color: var(--arc-gray-500);
+      line-height: 1.6;
+    }
+
+    .season-card-stats span {
+      font-family: var(--font-data);
+      font-weight: 500;
+      color: var(--arc-gray-700);
+    }
+
+    /* --- State Filter --- */
+    .state-filter-select {
+      border: 1px solid var(--arc-gray-300);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 13px;
+      font-family: var(--font-body);
+      outline: none;
+      background: var(--arc-white);
+      cursor: pointer;
+    }
+
+    .state-filter-select:focus {
+      border-color: var(--arc-gray-700);
+    }
+
+    .state-count-label {
+      font-size: 12px;
+      color: var(--arc-gray-500);
+      font-style: italic;
+    }
+
+    /* --- Comparison Tray --- */
+    .compare-btn {
+      border-radius: 20px;
+      border: 1px solid var(--arc-gray-300);
+      padding: 4px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: var(--font-body);
+      background: var(--arc-white);
+      color: var(--arc-gray-700);
+      transition: all 0.15s ease;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+
+    .compare-btn:hover {
+      border-color: var(--arc-gray-700);
+    }
+
+    .comparison-tray {
+      border-top: 1px solid var(--arc-gray-100);
+      padding: 10px 16px;
+      background: var(--arc-cream);
+      display: none;
+    }
+
+    .comparison-tray.visible {
+      display: block;
+    }
+
+    .comparison-tray-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .comparison-tray-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--arc-gray-500);
+      font-weight: 600;
+    }
+
+    .comparison-clear-btn {
+      border: none;
+      background: none;
+      font-size: 11px;
+      color: var(--arc-red);
+      cursor: pointer;
+      font-family: var(--font-body);
+      text-decoration: underline;
+    }
+
+    .comparison-cards {
+      display: flex;
+      gap: 8px;
+    }
+
+    .comparison-mini-card {
+      flex: 1;
+      background: var(--arc-white);
+      border: 1px solid var(--arc-gray-100);
+      border-radius: 4px;
+      padding: 8px 10px;
+      font-size: 12px;
+    }
+
+    .comparison-mini-card .mini-name {
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .comparison-mini-card .mini-name .cat-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    .comparison-mini-card .mini-stat {
+      font-family: var(--font-data);
+      font-size: 12px;
+      color: var(--arc-gray-500);
+    }
+
+    .comparison-mini-card .mini-stat.best {
+      font-weight: 700;
+      color: var(--arc-black);
+    }
+
+    /* --- Export Button --- */
+    .export-btn {
+      border-radius: 20px;
+      border: 1px solid var(--arc-info);
+      padding: 6px 16px;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: var(--font-body);
+      background: var(--arc-white);
+      color: var(--arc-info);
+      transition: all 0.15s ease;
+      margin-left: 8px;
+    }
+
+    .export-btn:hover {
+      background: var(--arc-info);
+      color: var(--arc-white);
+    }
+
+    /* --- Fullscreen Map --- */
+    .map-fullscreen-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 1000;
+      width: 30px;
+      height: 30px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid var(--arc-gray-300);
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: var(--arc-gray-700);
+      transition: background 0.15s ease;
+    }
+
+    .map-fullscreen-btn:hover {
+      background: var(--arc-white);
+    }
+
+    .map-fullscreen-close {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 10000;
+      width: 40px;
+      height: 40px;
+      background: var(--arc-white);
+      border: 1px solid var(--arc-gray-300);
+      border-radius: 50%;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: var(--arc-gray-700);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .storm-map-container.map-fullscreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 9999;
+      border-radius: 0;
+    }
+
+    .storm-map-container.map-fullscreen .map-fullscreen-btn {
+      display: none;
+    }
+
+    .storm-map-container.map-fullscreen ~ .map-fullscreen-close,
+    .map-fullscreen-close.visible {
+      display: flex;
+    }
+
     /* --- Responsive --- */
     @media (max-width: 768px) {
       .kpi-row {
@@ -387,6 +737,25 @@
     </div>
   </section>
 
+  <!-- Deadliest Storms Section -->
+  <section class="container deadliest-section">
+    <div style="margin-bottom:16px;">
+      <div style="width:40px;height:3px;background:#ED1B2E;margin-bottom:12px;"></div>
+      <h2 style="font-family:var(--font-headline);font-size:24px;font-weight:700;">Deadliest Atlantic Storms</h2>
+    </div>
+    <div class="deadliest-scroll" id="deadliest-scroll"></div>
+  </section>
+
+  <!-- Season Summaries Section -->
+  <section class="container season-section">
+    <div class="season-toggle">
+      <button class="filter-pill" id="season-toggle-btn">Season Summaries</button>
+    </div>
+    <div id="season-content" style="display:none;">
+      <div class="season-scroll" id="season-scroll"></div>
+    </div>
+  </section>
+
   <!-- Explorer Section -->
   <section class="container" style="padding-bottom:48px;">
     <div style="margin-bottom:16px;">
@@ -406,11 +775,17 @@
       <div class="filter-separator"></div>
       <button class="filter-pill" id="landfall-toggle">Landfall Only</button>
       <button class="filter-pill active" id="names-toggle">Show Names</button>
+      <div class="filter-separator"></div>
+      <select id="state-filter" class="state-filter-select">
+        <option value="">All States</option>
+      </select>
+      <span id="state-count-label" class="state-count-label"></span>
       <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
         <label style="font-size:12px;color:var(--arc-gray-500);">Years:</label>
         <input type="number" id="year-start" value="2010" min="1851" max="2025" class="year-input">
         <span style="color:var(--arc-gray-300);">–</span>
         <input type="number" id="year-end" value="2025" min="1851" max="2025" class="year-input">
+        <button id="export-csv-btn" class="export-btn">Export CSV</button>
       </div>
     </div>
 
@@ -423,10 +798,11 @@
         <!-- Storm Info Header -->
         <div class="storm-header" id="storm-header">
           <div class="storm-badge" id="storm-badge">?</div>
-          <div>
+          <div style="flex:1;">
             <div class="storm-name" id="storm-name">Select a Storm</div>
             <div class="storm-subtitle" id="storm-subtitle">Click any dot on the timeline</div>
           </div>
+          <button class="compare-btn" id="compare-btn" style="display:none;">Compare</button>
         </div>
         <!-- Storm Stats Row -->
         <div class="storm-stats" id="storm-stats" style="display:none;">
@@ -448,8 +824,9 @@
           </div>
         </div>
         <!-- Map -->
-        <div class="storm-map-container">
+        <div class="storm-map-container" id="map-container">
           <div id="map"></div>
+          <button class="map-fullscreen-btn" id="map-fullscreen-btn" title="Fullscreen map">&#x26F6;</button>
           <div class="map-legend">
             <span class="legend-dot" style="background:#8B9DC3;"></span><span>TS</span>
             <span class="legend-dot" style="background:#5CB85C;"></span><span>1</span>
@@ -459,10 +836,19 @@
             <span class="legend-dot" style="background:#8B008B;"></span><span>5</span>
           </div>
         </div>
+        <button class="map-fullscreen-close" id="map-fullscreen-close" title="Exit fullscreen">&#x2715;</button>
         <!-- Narrative -->
         <div class="storm-narrative">
           <div class="narrative-title">Historical Narrative</div>
           <div class="narrative-text" id="narrative-text">Select a storm with landfall history for detailed narrative information.</div>
+        </div>
+        <!-- Comparison Tray -->
+        <div class="comparison-tray" id="comparison-tray">
+          <div class="comparison-tray-header">
+            <span class="comparison-tray-title">Comparing Storms</span>
+            <button class="comparison-clear-btn" id="comparison-clear-btn">Clear</button>
+          </div>
+          <div class="comparison-cards" id="comparison-cards"></div>
         </div>
       </div>
     </div>
